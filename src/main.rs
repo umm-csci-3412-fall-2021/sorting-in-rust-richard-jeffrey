@@ -17,7 +17,8 @@ fn main() {
     let mut w = v.clone();
     // println!("{:?}", &w);
     let before_quicksort = Instant::now();
-    quicksort(&mut w);
+    let w_length = w.len();
+    quicksort(&mut w, 0, w_length);
     println!("Elapsed time for quicksort was {:?}.", before_quicksort.elapsed());
     // println!("{:?}", &w);
 
@@ -82,7 +83,7 @@ fn insertion_sort<T: PartialOrd + std::fmt::Debug>(v: &mut [T]) {
 //
 // Note that the parameter v *has* to be mutable because we're 
 // modifying it in place.
-fn quicksort<T: PartialOrd + std::fmt::Debug>(v: &mut [T]) {
+fn quicksort<T: PartialOrd + std::fmt::Debug>(v: &mut [T], low: usize, high: usize) {
     // Quicksort is a recursive solution where we select a pivot
     // value (usually just the first element) and split (in place)
     // the array into two sections: The "front" is all < the pivot,
@@ -103,19 +104,40 @@ fn quicksort<T: PartialOrd + std::fmt::Debug>(v: &mut [T]) {
     if length < 2 {
         return;
     }
+    if low < high {
+        let pivot = partition(v, low, high);
+        let min_pivot = if pivot <= 0 { 0 } else { pivot - 1 };
+        quicksort(v, low, min_pivot);
+        quicksort(v, pivot + 1, high);
+    }
+}
 
-    // Now choose a pivot and do the organizing.
-    
-    // ...
-
-    let smaller = 0; // Totally wrong – you should fix this.
-
-    // Sort all the items < pivot
-    quicksort(&mut v[0..smaller]);
-    // Sort all the items ≥ pivot, *not* including the
-    // pivot value itself. If we don't include the +1
-    // here you can end up in infinite recursions.
-    quicksort(&mut v[smaller+1..length]);
+fn partition<T: PartialOrd>(v: &mut[T], first: usize, last: usize) -> usize{
+    let mut i = first + 1;
+    let mut j = last;
+    loop {
+        while v[i] < v[first] {
+            i += 1;
+            if i == last {
+                break;
+            }
+        }
+        while v[j] > v[first] {
+            j -= 1;
+            if j == first {
+                break;
+            }
+        }
+        if i >= j {
+            break;
+        }
+        v.swap(j, i);
+        i += 1;
+        j -= 1;
+        
+    }
+    v.swap(first, j);
+    j
 }
 
 // Merge sort can't be done "in place", so it needs to return a _new_
@@ -141,7 +163,7 @@ fn merge_sort<T: PartialOrd + std::marker::Copy + std::fmt::Debug>(v: &[T]) -> V
     // Merge sort is a recursive solution where we split the
     // array in half (slices make this easy), sort each half,
     // and then merge the results together. All the "interesting"
-    // work is in the merge here, where in quicksort the "interesting"
+    // work is, 0, input.len() the merge here, where in quicksort the "interesting"
     // work is in organizing around the pivot.
 
     let len = v.len();
@@ -246,7 +268,9 @@ mod tests {
         #[test]
         fn empty() {
             let mut input : [i32; 0] = [];
-            quicksort(&mut input);
+            let input_length = input.len();
+            let min_input_length = if input_length == 0 { 0 } else { input_length - 1 };
+            quicksort(&mut input, 0, min_input_length);
             let expected : [i32; 0] = [];
 
             assert_eq!(expected, input);
@@ -255,7 +279,8 @@ mod tests {
         #[test]
         fn ten_items() {
             let mut input = [3, 2, 0, 5, 8, 9, 6, 3, 2, 0];
-            quicksort(&mut input);
+            let input_length = input.len();
+            quicksort(&mut input, 0, input_length - 1);
             let expected = [0, 0, 2, 2, 3, 3, 5, 6, 8, 9];
 
             assert_eq!(expected, input);
@@ -264,7 +289,8 @@ mod tests {
         #[test]
         fn presorted() {
             let mut input = [0, 0, 2, 2, 3, 3, 5, 6, 8, 9];
-            quicksort(&mut input);
+            let input_length = input.len();
+            quicksort(&mut input, 0, input_length - 1);
             let expected = [0, 0, 2, 2, 3, 3, 5, 6, 8, 9];
 
             assert_eq!(expected, input);
